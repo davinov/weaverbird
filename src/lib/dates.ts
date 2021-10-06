@@ -14,7 +14,16 @@ export type DatePickerHighlight = {
   dates?: DateRange;
 };
 
-export type Duration = 'year' | 'quarter' | 'month' | 'week' | 'day';
+export enum Durations {
+  year = 'year',
+  quarter = 'quarter',
+  month = 'month',
+  week = 'week',
+  day = 'day',
+}
+
+export type Duration = keyof typeof Durations;
+
 export type DurationOption = {
   label: string;
   value: Duration;
@@ -24,6 +33,15 @@ export type RelativeDate = {
   quantity: number; // can be negative or positive
   duration: Duration;
 };
+
+export function isRelativeDate(val: any): val is RelativeDate {
+  return (
+    typeof val == 'object' &&
+    typeof val.quantity == 'number' &&
+    typeof val.duration == 'string' &&
+    Object.values(Durations).includes(val.duration)
+  );
+}
 
 export type RelativeDateRange = {
   date: string;

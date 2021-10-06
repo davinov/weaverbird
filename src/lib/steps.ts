@@ -1,6 +1,7 @@
 /**
  * This module defines the supported unit-of-transformation steps.
  */
+import { RelativeDate } from '@/lib/dates';
 
 export type BasicDatePart =
   | 'year'
@@ -244,7 +245,7 @@ export type FilterSimpleCondition =
 
 type FilterConditionComparison = {
   column: string;
-  value: number | string;
+  value: number | string | Date | RelativeDate;
   operator: 'gt' | 'ge' | 'lt' | 'le';
 };
 

@@ -3,6 +3,7 @@
 import _ from 'lodash';
 import * as math from 'mathjs';
 
+import { isRelativeDate, RelativeDate } from '@/lib/dates';
 import { $$, combinations, escapeForUseInRegExp } from '@/lib/helpers';
 import { OutputStep, StepMatcher } from '@/lib/matcher';
 import * as S from '@/lib/steps';
@@ -2254,6 +2255,28 @@ export class Mongo36Translator extends BaseTranslator {
     };
   }
 
+  /**
+   * Translate any value expression into one mongo can evaluate.
+   *
+   * @private
+   */
+  private translateValue(value: any): any {
+    if (isRelativeDate(value)) {
+      this.translateRelativeDate(value);
+    }
+    return value;
+  }
+
+  private translateRelativeDate(value: RelativeDate): object {
+    console.error('This version of Mongo does not support dates operators');
+    return value;
+  }
+
+  /**
+   * Recursively parse a Condition and turn it into the argument of a $match aggregation step
+   *
+   * @private
+   */
   private buildMatchTree(
     cond: S.FilterSimpleCondition | S.FilterComboAnd | S.FilterComboOr,
     parentComboOp: ComboOperator = 'and',
@@ -2272,7 +2295,9 @@ export class Mongo36Translator extends BaseTranslator {
     };
 
     if (S.isFilterComboAnd(cond) && parentComboOp !== 'or') {
-      return _simplifyAndCondition({ $and: cond.and.map(elem => this.buildMatchTree(elem, 'and')) });
+      return _simplifyAndCondition({
+        $and: cond.and.map(elem => this.buildMatchTree(elem, 'and')),
+      });
     }
     if (S.isFilterComboAnd(cond)) {
       return { $and: cond.and.map(elem => this.buildMatchTree(elem, 'and')) };
@@ -2288,7 +2313,7 @@ export class Mongo36Translator extends BaseTranslator {
     if (cond.operator === 'notnull' || cond.operator === 'isnull') {
       return { [cond.column]: { [operatorMapping[cond.operator]]: null } };
     }
-    return { [cond.column]: { [operatorMapping[cond.operator]]: cond.value } };
+    return { [cond.column]: { [operatorMapping[cond.operator]]: this.translateValue(cond.value) } };
   }
 
   /**
